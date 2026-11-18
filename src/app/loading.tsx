@@ -1,3 +1,7 @@
 export default function Loading() {
-  return <main><p role="status">Loading the commons…</p></main>;
+  return (
+    <main>
+      <p role="status">Loading the commons…</p>
+    </main>
+  );
 }

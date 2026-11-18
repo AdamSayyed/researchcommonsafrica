@@ -1,3 +1,127 @@
-import {requireMember} from '@/lib/member';import {redirect} from 'next/navigation';
-async function signOut(){'use server';const {client}=await requireMember();await client.auth.signOut();redirect('/')}
-export default async function Members(){const {client,user}=await requireMember();const {data:profile,error}=await client.from('profiles').select('*').eq('id',user.id).maybeSingle();if(error)throw new Error('Could not load member profile');if(!profile)redirect('/profile');const {data:people,error:peopleError}=await client.from('profiles').select('id,name,career_stage,affiliation,field,city,bio,open_to_mentorship').order('created_at',{ascending:false}).limit(30);if(peopleError)throw new Error('Could not load directory');return <main><h1>Welcome, {profile.name}.</h1><nav><a href="/profile">Edit my profile</a><form action={signOut}><button>Sign out</button></form></nav><h2>Meet your community</h2>{people?.map(p=><article className="card" key={p.id}><h3>{p.name}</h3><p>{p.career_stage} · {p.affiliation}<br/>{p.field} · {p.city}</p><p>{p.bio}</p>{p.open_to_mentorship&&<strong>Open to mentorship</strong>}</article>)}</main>}
+import Link from "next/link";
+import { community } from "@/lib/community";
+import CommunityNav from "@/components/community-nav";
+import MemberCard from "@/components/member-card";
+export default async function Members({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    q?: string;
+    mentor?: string;
+    collaborator?: string;
+    page?: string;
+  }>;
+}) {
+  const { client, profile } = await community();
+  const s = await searchParams;
+  const page = Math.max(0, Math.min(1000, Number(s.page) || 0));
+  const q = (s.q || "")
+    .replace(/[%_,().]/g, " ")
+    .trim()
+    .slice(0, 100);
+  let query = client
+    .from("profiles")
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false });
+  if (q)
+    query = query.or(
+      "name.ilike.%" +
+        q +
+        "%,field.ilike.%" +
+        q +
+        "%,city.ilike.%" +
+        q +
+        "%,interests.ilike.%" +
+        q +
+        "%,affiliation.ilike.%" +
+        q +
+        "%",
+    );
+  if (s.mentor === "1") query = query.eq("open_to_mentorship", true);
+  if (s.collaborator === "1") query = query.eq("open_to_collaboration", true);
+  const {
+    data: people,
+    count,
+    error,
+  } = await query.range(page * 12, page * 12 + 11);
+  if (error) throw new Error("Unable to load community");
+  const url = (p: number) =>
+    "/members?" +
+    new URLSearchParams({
+      q: s.q || "",
+      mentor: s.mentor || "",
+      collaborator: s.collaborator || "",
+      page: String(p),
+    });
+  return (
+    <main>
+      <CommunityNav />
+      <section className="welcome">
+        <p className="eyebrow">YOUR COMMUNITY, YOUR POSSIBILITIES</p>
+        <h1>Welcome, {profile.name.split(" ")[0]}.</h1>
+        <p>Find the next perspective that moves your research forward.</p>
+        <div className="actions">
+          <Link className="button" href="/research/new">
+            Share a question
+          </Link>
+          <Link className="button secondary" href="/mentorship">
+            Find mentorship
+          </Link>
+        </div>
+      </section>
+      <section className="page-heading">
+        <div>
+          <h2>Meet your community</h2>
+          <p>Across borders, disciplines and practice.</p>
+        </div>
+        <Link href="/map">Explore the map →</Link>
+      </section>
+      <form className="filters">
+        <input
+          name="q"
+          aria-label="Search members"
+          placeholder="Name, field, city, affiliation or keyword"
+          defaultValue={s.q}
+        />
+        <label className="check">
+          <input
+            type="checkbox"
+            name="mentor"
+            value="1"
+            defaultChecked={s.mentor === "1"}
+          />
+          Mentors
+        </label>
+        <label className="check">
+          <input
+            type="checkbox"
+            name="collaborator"
+            value="1"
+            defaultChecked={s.collaborator === "1"}
+          />
+          Collaborators
+        </label>
+        <button>Search</button>
+      </form>
+      <p className="hint">{count || 0} members found</p>
+      <div className="grid">
+        {people?.map((p) => (
+          <MemberCard key={p.id} person={p} />
+        ))}
+      </div>
+      {!people?.length && (
+        <div className="empty">
+          <h2>No matches yet.</h2>
+          <p>Try a broader field or location.</p>
+          <Link href="/members">Clear filters</Link>
+        </div>
+      )}
+      <nav aria-label="Pagination">
+        {page > 0 && <Link href={url(page - 1)}>← Previous</Link>}
+        {(count || 0) > (page + 1) * 12 && (
+          <Link href={url(page + 1)}>Next →</Link>
+        )}
+      </nav>
+    </main>
+  );
+}
