@@ -5,6 +5,8 @@ import { https, text } from "@/lib/community";
 import CommunityNav from "@/components/community-nav";
 import Submit from "@/components/submit";
 import { cities } from "@/lib/locations";
+import { interests } from "@/lib/interests";
+import Suggestions from "@/components/suggestions";
 const careers = [
   "Master’s student",
   "PhD student",
@@ -119,31 +121,21 @@ export default async function Profile({
             />
           </label>
         </div>
-        <label>
-          City, country
-          <input
-            name="city"
-            list="cities"
-            required
-            maxLength={160}
-            defaultValue={p?.city}
-            placeholder="Start typing a city, or enter your own"
-          />
-          <datalist id="cities">
-            {cities.map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
-        </label>
-        <label>
-          Areas of interest / expertise
-          <input
-            name="interests"
-            maxLength={500}
-            defaultValue={p?.interests}
-            placeholder="e.g. Epidemiology, maternal health, qualitative methods"
-          />
-        </label>
+        <Suggestions
+          name="city"
+          label="City, country"
+          options={cities}
+          initial={p?.city || ""}
+          required
+        />
+        <Suggestions
+          name="interests"
+          label="Areas of interest / expertise"
+          options={interests}
+          initial={p?.interests || ""}
+          multiple
+          maxLength={500}
+        />
         <label>
           About your research and experience
           <textarea
