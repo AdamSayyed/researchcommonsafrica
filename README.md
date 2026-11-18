@@ -31,3 +31,5 @@ Migrations in `supabase/migrations` create the shared data model and row-level p
 
 ## Deployment
 Use the existing Vercel project `researchcommonsafrica`. CLI deployments work; Vercel Git integration has not been connected, so a GitHub push alone does not deploy.
+
+Post meetings: viewers propose a time and confirm their availability when sending. Only the post author can accept. Pending requests are private to both parties and separate from upcoming meetings. Acceptance atomically creates one booked session; conflicting schedules, duplicate acceptance and third-party approval are rejected. Requests can be declined or withdrawn. Cancelling a post meeting never reopens it as public availability.

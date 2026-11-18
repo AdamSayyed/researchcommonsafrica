@@ -22,3 +22,5 @@ See README for deliberate MVP limits. Automatic email, Google Meet creation, fil
 
 ## Schema
 Migrations are additive to existing profiles. RLS protects every new public table. Privileged booking helpers are in the private schema with explicit verified-user checks; public RPCs are invoker wrappers. Meeting URLs are excluded from table SELECT grants and retrieved only by checked participant RPC. No elevated database key is used by application code.
+
+Post meeting verification: TypeScript passed. Transactional tests passed for request privacy, sender self-approval denial, third-party approval denial, pending/upcoming separation, exact-once acceptance, schedule conflict denial, decline, withdrawal and private cancellation. Test fixtures rolled back. Security advisor has no new findings.

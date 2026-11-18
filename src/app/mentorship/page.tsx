@@ -1,3 +1,4 @@
+import MeetingRequests from "@/components/meeting-requests";
 import Link from "next/link";
 import { community, slotColumns } from "@/lib/community";
 import CommunityNav from "@/components/community-nav";
@@ -59,7 +60,9 @@ export default async function Mentorship({
         <p className="notice" role="alert">
           {s.error === "unavailable"
             ? "That time is unavailable or overlaps your schedule. Please choose another session."
-            : "Unable to save. Check your details, future date and HTTPS meeting link. Availability must not overlap your existing sessions."}
+            : s.error === "request"
+              ? "This request cannot be confirmed. It may have expired, changed, or conflict with a participant schedule. Decline or withdraw it and propose another time."
+              : "Unable to save. Check your details, future date and HTTPS meeting link. Availability must not overlap your existing sessions."}
         </p>
       )}
       {s.success && (
@@ -67,99 +70,114 @@ export default async function Mentorship({
           Session {s.success}. Your schedule is up to date.
         </p>
       )}
-      <section>
-        <h2>Your upcoming sessions</h2>
-        {!mine.length && (
-          <p className="empty">
-            No sessions yet. Book a time below or offer your expertise.
-          </p>
-        )}
-        <div className="grid">
-          {mine.map((t) => (
-            <article className="card" key={t.id}>
-              <span className="badge">
-                {t.cancelled
-                  ? "Cancelled"
-                  : t.booked_by
-                    ? "Booked"
-                    : "Available"}
-              </span>
-              <h3>{t.topic}</h3>
-              <p>
-                <LocalTime value={t.starts_at} />
-                <br />
-                {Math.round(
-                  (Date.parse(t.ends_at) - Date.parse(t.starts_at)) / 60000,
-                )}{" "}
-                minutes
-              </p>
-              <p>
-                {t.mentor_id === user.id
-                  ? t.booked_by
-                    ? "With " + names.get(t.booked_by)?.name
-                    : "You are mentoring"
-                  : "Mentor: " + names.get(t.mentor_id)?.name}
-              </p>
-              {links.get(t.id) && (
-                <a
-                  className="button"
-                  href={links.get(t.id)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Join meeting ↗
-                </a>
-              )}
-              {!t.cancelled && (
-                <div className="actions">
-                  <a
-                    href={"/mentorship/" + t.id + "/calendar"}
-                    className="quiet"
-                  >
-                    Add to calendar
-                  </a>
-                  <form action={cancelSlot}>
-                    <input type="hidden" name="id" value={t.id} />
-                    <Submit
-                      confirm={
-                        t.mentor_id === user.id
-                          ? "Cancel this session? The booked member will be notified."
-                          : "Cancel your booking and free this time for someone else?"
-                      }
-                    >
-                      Cancel {t.mentor_id === user.id ? "session" : "booking"}
-                    </Submit>
-                  </form>
-                </div>
-              )}
-              {!t.cancelled && t.mentor_id === user.id && (
-                <details>
-                  <summary>Update meeting link</summary>
-                  <form action={updateLink}>
-                    <input type="hidden" name="id" value={t.id} />
-                    <label>
-                      Private meeting URL
-                      <input
-                        type="url"
-                        name="meeting_url"
-                        maxLength={500}
-                        defaultValue={links.get(t.id) || ""}
-                        placeholder="https://meet.google.com/…"
-                      />
-                    </label>
-                    <Submit>Save link</Submit>
-                  </form>
-                </details>
-              )}
-              {!t.cancelled && t.booked_by === user.id && !links.get(t.id) && (
-                <p className="hint">
-                  Your mentor has not added a meeting link yet.
+      <MeetingRequests />
+      {[
+        {
+          title: "Your upcoming meetings",
+          items: mine.filter((t) => t.booked_by && !t.cancelled),
+        },
+        {
+          title: "Your availability",
+          items: mine.filter((t) => !t.booked_by && !t.cancelled),
+        },
+        { title: "Cancelled sessions", items: mine.filter((t) => t.cancelled) },
+      ].map((group) => (
+        <section key={group.title}>
+          <h2>{group.title}</h2>
+          {!group.items.length && (
+            <p className="empty">
+              No sessions yet. Book a time below or offer your expertise.
+            </p>
+          )}
+          <div className="grid">
+            {group.items.map((t) => (
+              <article className="card" key={t.id}>
+                <span className="badge">
+                  {t.cancelled
+                    ? "Cancelled"
+                    : t.booked_by
+                      ? "Confirmed meeting"
+                      : "Available"}
+                </span>
+                <h3>{t.topic}</h3>
+                <p>
+                  <LocalTime value={t.starts_at} />
+                  <br />
+                  {Math.round(
+                    (Date.parse(t.ends_at) - Date.parse(t.starts_at)) / 60000,
+                  )}{" "}
+                  minutes
                 </p>
-              )}
-            </article>
-          ))}
-        </div>
-      </section>
+                <p>
+                  {t.mentor_id === user.id
+                    ? t.booked_by
+                      ? "With " + names.get(t.booked_by)?.name
+                      : "You are mentoring"
+                    : "Mentor: " + names.get(t.mentor_id)?.name}
+                </p>
+                {links.get(t.id) && (
+                  <a
+                    className="button"
+                    href={links.get(t.id)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Join meeting ↗
+                  </a>
+                )}
+                {!t.cancelled && (
+                  <div className="actions">
+                    <a
+                      href={"/mentorship/" + t.id + "/calendar"}
+                      className="quiet"
+                    >
+                      Add to calendar
+                    </a>
+                    <form action={cancelSlot}>
+                      <input type="hidden" name="id" value={t.id} />
+                      <Submit
+                        confirm={
+                          t.mentor_id === user.id
+                            ? "Cancel this session? The booked member will be notified."
+                            : "Cancel your booking and free this time for someone else?"
+                        }
+                      >
+                        Cancel {t.mentor_id === user.id ? "session" : "booking"}
+                      </Submit>
+                    </form>
+                  </div>
+                )}
+                {!t.cancelled && t.mentor_id === user.id && (
+                  <details>
+                    <summary>Update meeting link</summary>
+                    <form action={updateLink}>
+                      <input type="hidden" name="id" value={t.id} />
+                      <label>
+                        Private meeting URL
+                        <input
+                          type="url"
+                          name="meeting_url"
+                          maxLength={500}
+                          defaultValue={links.get(t.id) || ""}
+                          placeholder="https://meet.google.com/…"
+                        />
+                      </label>
+                      <Submit>Save link</Submit>
+                    </form>
+                  </details>
+                )}
+                {!t.cancelled &&
+                  t.booked_by === user.id &&
+                  !links.get(t.id) && (
+                    <p className="hint">
+                      Your mentor has not added a meeting link yet.
+                    </p>
+                  )}
+              </article>
+            ))}
+          </div>
+        </section>
+      ))}
       <section>
         <h2>Available conversations</h2>
         <div className="grid">

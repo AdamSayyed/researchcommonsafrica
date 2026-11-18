@@ -1,3 +1,4 @@
+import MeetingRequestForm from "@/components/meeting-request-form";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { community, uuid } from "@/lib/community";
@@ -17,7 +18,7 @@ export default async function Detail({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; meeting?: string }>;
 }) {
   const { client, user } = await community();
   const { id } = await params;
@@ -36,6 +37,15 @@ export default async function Detail({
     .order("created_at")
     .limit(200);
   if (re) throw new Error("Unable to load responses");
+  const { data: pending, error: requestError } = await client
+    .from("meeting_requests")
+    .select("id")
+    .eq("post_id", id)
+    .eq("requester_id", user.id)
+    .eq("status", "Pending")
+    .gt("starts_at", new Date().toISOString())
+    .limit(1);
+  if (requestError) throw new Error("Unable to load meeting requests");
   const s = await searchParams;
   return (
     <main>
@@ -86,6 +96,34 @@ export default async function Detail({
           </>
         )}
       </article>
+      {s.meeting && (
+        <p className="notice" role="alert">
+          Could not send the request. Choose a future time, or check Mentorship
+          for an existing pending request.
+        </p>
+      )}
+      {p.status === "Open" && user.id !== p.author_id && (
+        <section className="card">
+          <h2>Schedule a conversation about this post</h2>
+          {pending?.length ? (
+            <p>
+              You already have a pending request.{" "}
+              <Link href="/mentorship">
+                View or withdraw it in Mentorship →
+              </Link>
+            </p>
+          ) : (
+            <MeetingRequestForm post={id} />
+          )}
+        </section>
+      )}
+      {user.id === p.author_id && (
+        <p>
+          <Link href="/mentorship">
+            Review meeting requests for your research →
+          </Link>
+        </p>
+      )}
       {s.error && (
         <p role="alert" className="notice">
           Couldn’t save. The post may be resolved or your session may have
