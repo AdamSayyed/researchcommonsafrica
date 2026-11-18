@@ -1,0 +1,15 @@
+{
+  "supabase": {
+    "projectId": "qndahcqocslgfdgbengq",
+    "organizationId": "jfkygcgrhyjjhipymrro",
+    "region": "eu-west-1"
+  },
+  "github": {
+    "owner": "AdamSayyed",
+    "repository": "research-commons-africa",
+    "created": false
+  },
+  "vercel": {
+    "created": false
+  }
+}
