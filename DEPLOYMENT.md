@@ -23,3 +23,5 @@ Validation: TypeScript check passed. Production build passed with npm run build 
 
 
 Cloud setup update: Supabase project qndahcqocslgfdgbengq created, profiles migration applied, RLS enabled, anonymous read denied, security advisor clean. Vercel initial deployment READY at https://researchcommonsafrica.vercel.app. Public GitHub repository AdamSayyed/researchcommonsafrica exists; source push pending Git authentication. Auth callback configuration and live email verification still pending dashboard login and sending-domain setup. This is an initial foundation, not the complete platform.
+
+Verification update: corrected deployment dpl_B1GLSPiCLEqztgTHt9Y5UmjMKW3c is READY. Homepage HTTP 200. Signed-out /members contains the Next.js redirect to /sign-in and no member directory. SQL transactional tests passed for owner insert/update, member directory reads, and denied cross-member updates; fixtures rolled back. Source pushed to public GitHub repository. Automatic Vercel Git integration failed to connect and remains pending; CLI deployment works. Supabase dashboard login needed for Auth callback settings; real email sign-in remains unverified.
