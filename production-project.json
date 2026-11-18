@@ -6,10 +6,16 @@
   },
   "github": {
     "owner": "AdamSayyed",
-    "repository": "research-commons-africa",
-    "created": false
+    "repository": "researchcommonsafrica",
+    "created": true,
+    "sourcePushed": false,
+    "visibility": "public"
   },
   "vercel": {
-    "created": false
+    "created": true,
+    "team": "adamasayyed-8145s-projects",
+    "project": "researchcommonsafrica",
+    "url": "https://researchcommonsafrica.vercel.app",
+    "deploymentId": "dpl_4D75EXxh1NUhyBvNRyqeGxEZ3NND"
   }
 }

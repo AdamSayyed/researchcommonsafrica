@@ -21,3 +21,5 @@ Deployment preference: start on the default Vercel *.vercel.app hostname. A cust
 
 Validation: TypeScript check passed. Production build passed with npm run build -- --webpack. Default Turbopack build could not load the local Windows native compiler; Webpack used the WASM fallback. Live authentication and database permission tests remain pending service connections.
 
+
+Cloud setup update: Supabase project qndahcqocslgfdgbengq created, profiles migration applied, RLS enabled, anonymous read denied, security advisor clean. Vercel initial deployment READY at https://researchcommonsafrica.vercel.app. Public GitHub repository AdamSayyed/researchcommonsafrica exists; source push pending Git authentication. Auth callback configuration and live email verification still pending dashboard login and sending-domain setup. This is an initial foundation, not the complete platform.
