@@ -1,5 +1,40 @@
 import SignInSubmit from '@/components/sign-in-submit';
 import {redirect} from 'next/navigation';
-import {configured,supabase} from '@/lib/supabase';
-async function signIn(form:FormData){'use server';const email=String(form.get('email')||'').trim();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254)redirect('/sign-in?error=invalid');const client=await supabase();const origin=process.env.APP_URL;if(!origin)throw new Error('APP_URL must be configured');const {error}=await client.auth.signInWithOtp({email,options:{emailRedirectTo:new URL('/auth/callback',origin).toString()}});if(error){const reason=error.status===429?'rate_limit':error.code==='email_address_not_authorized'?'email_setup':'delivery';console.error('Sign-in email request failed',{code:error.code,status:error.status});redirect('/sign-in?error='+reason);}redirect('/sign-in?sent=1')}
-export default async function SignIn({searchParams}:{searchParams:Promise<{sent?:string;error?:string}>}){const q=await searchParams;return <main><a href="/">← Research Commons Africa</a><h1>Your next connection starts here.</h1><p>Enter your email to receive a secure sign-in link. New members are welcome.</p>{!configured()?<p className="notice">Sign-in is not available yet. Please check back soon.</p>:q.sent?<p className="notice">Your sign-in email has been requested. Check your inbox and spam folder for a message from Supabase. Open the newest link in this browser. Please wait at least 60 seconds before requesting another.</p>:<form action={signIn}><label>Email address<input name="email" type="email" autoComplete="email" required maxLength={254}/></label><SignInSubmit/>{q.error&&<p role="alert">{q.error==='rate_limit'?'A sign-in email was requested recently. Wait at least 60 seconds before trying again. If this continues, the email service may have reached its hourly limit.':q.error==='email_setup'?'Email sign-in is still being configured for new members. Please contact maryjoasisfoundation@gmail.com.':q.error==='link'?'This sign-in link is expired, already used, or was opened in a different browser. Request a fresh link and open it in this browser.':'We couldn’t send the sign-in email. Please try again later or contact maryjoasisfoundation@gmail.com.'}</p>}</form>}</main>}
+import {configured, supabase} from '@/lib/supabase';
+
+async function signIn() {
+  'use server';
+  const origin = process.env.APP_URL;
+  if (!origin) throw new Error('APP_URL must be configured');
+  const client = await supabase();
+  const {data, error} = await client.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: new URL('/auth/callback', origin).toString(),
+      queryParams: {prompt: 'select_account'},
+    },
+  });
+  if (error || !data.url) {
+    console.error('Google sign-in failed', {code: error?.code, status: error?.status});
+    redirect('/sign-in?error=google');
+  }
+  redirect(data.url);
+}
+
+export default async function SignIn({searchParams}: {
+  searchParams: Promise<{error?: string}>;
+}) {
+  const {error} = await searchParams;
+  return <main>
+    <a href="/">← Research Commons Africa</a>
+    <h1>Your next connection starts here.</h1>
+    <p>Use your Google account to join our research community or sign in.</p>
+    {!configured() ? <p className="notice">Sign-in is not available yet. Please check back soon.</p> :
+      <form action={signIn}>
+        <SignInSubmit/>
+        {error && <p role="alert">{error === 'cancelled'
+          ? 'Google sign-in was cancelled. You can try again when you’re ready.'
+          : 'We couldn’t complete Google sign-in. Please try again. If this continues, contact maryjoasisfoundation@gmail.com.'}</p>}
+      </form>}
+  </main>;
+}
